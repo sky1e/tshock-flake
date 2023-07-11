@@ -177,7 +177,7 @@
                 dataDir = mkOption {
                   type = types.str;
                   default = "/var/lib/tshock";
-                  example = "/srv/tshock";
+                  example = "/var/lib/tshock";
                   description = lib.mdDoc
                     "Path to variable state data directory for tshock.";
                 };
@@ -189,10 +189,12 @@
                 group = "tshock";
                 home = cfg.dataDir;
                 createHome = true;
+                isSystemUser = true;
                 #uid = config.ids.uids.terraria;
               };
 
               users.groups.tshock = { /*gid = config.ids.gids.tshock;*/ };
+              users.groups.tshock.members = [ "tshock" ];
 
               systemd.services.tshock = {
                 description = "TShock Server Service";
@@ -205,15 +207,16 @@
                   GuessMainPID = true;
                   ExecStart = "${
                       getBin pkgs.tmux
-                    }/bin/tmux -S ${cfg.dataDir}/tshock.sock new -d ${pkgs.tshock}/bin/TShock.Server ${
+                    }/bin/tmux -S /var/lib/tshock/tshock.sock new -d ${pkgs.tshock}/bin/TShock.Server ${
                       lib.concatStringsSep " " flags
                     }";
                   ExecStop = "${stopScript} $MAINPID";
+                  StateDirectory = "tshock";
                 };
 
                 postStart = ''
-                  ${pkgs.coreutils}/bin/chmod 660 ${cfg.dataDir}/tshock.sock
-                  ${pkgs.coreutils}/bin/chgrp tshock ${cfg.dataDir}/tshock.sock
+                  ${pkgs.coreutils}/bin/chmod 660 /var/lib/tshock/tshock.sock
+                  ${pkgs.coreutils}/bin/chgrp tshock /var/lib/tshock/tshock.sock
                 '';
               };
 
