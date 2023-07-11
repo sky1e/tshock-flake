@@ -189,10 +189,10 @@
                 group = "tshock";
                 home = cfg.dataDir;
                 createHome = true;
-                uid = config.ids.uids.tshock;
+                #uid = config.ids.uids.terraria;
               };
 
-              users.groups.tshock = { gid = config.ids.gids.tshock; };
+              users.groups.tshock = { /*gid = config.ids.gids.tshock;*/ };
 
               systemd.services.tshock = {
                 description = "TShock Server Service";
