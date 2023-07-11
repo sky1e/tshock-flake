@@ -44,7 +44,7 @@
 
         formatter = pkgs.nixfmt;
       }) // {
-        nixosModules.tshock = { config, lib, options, pkgs }:
+        nixosModules.tshock = { config, lib, options, pkgs, ... }:
           let
             cfg = config.services.terraria;
             inherit (lib) getBin mkIf mkOption types;
