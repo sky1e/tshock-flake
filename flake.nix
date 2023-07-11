@@ -46,9 +46,9 @@
       }) // {
         nixosModules.tshock = { config, lib, options, pkgs, ... }:
           let
-            cfg = config.services.terraria;
+            cfg = config.services.tshock;
             inherit (lib) getBin mkIf mkOption types;
-            opt = options.services.terraria;
+            opt = options.services.tshock;
             worldSizeMap = {
               small = 1;
               medium = 2;
@@ -70,7 +70,7 @@
               (boolFlag "secure" cfg.secure)
               (boolFlag "noupnp" cfg.noUPnP)
             ];
-            stopScript = pkgs.writeScript "terraria-stop" ''
+            stopScript = pkgs.writeScript "tshock-stop" ''
               #!${pkgs.runtimeShell}
 
               if ! [ -d "/proc/$1" ]; then
@@ -79,7 +79,7 @@
 
               ${
                 getBin pkgs.tmux
-              }/bin/tmux -S ${cfg.dataDir}/terraria.sock send-keys Enter exit Enter
+              }/bin/tmux -S ${cfg.dataDir}/tshock.sock send-keys Enter exit Enter
               ${getBin pkgs.coreutils}/bin/tail --pid="$1" -f /dev/null
             '';
           in {
@@ -89,8 +89,8 @@
                   type = types.bool;
                   default = false;
                   description = lib.mdDoc ''
-                    If enabled, starts a Terraria server. The server can be connected to via `tmux -S ''${config.${opt.dataDir}}/terraria.sock attach`
-                    for administration by users who are a part of the `terraria` group (use `C-b d` shortcut to detach again).
+                    If enabled, starts a Terraria server. The server can be connected to via `tmux -S ''${config.${opt.dataDir}}/tshock.sock attach`
+                    for administration by users who are a part of the `tshock` group (use `C-b d` shortcut to detach again).
                   '';
                 };
 
@@ -176,10 +176,10 @@
 
                 dataDir = mkOption {
                   type = types.str;
-                  default = "/var/lib/terraria";
-                  example = "/srv/terraria";
+                  default = "/var/lib/tshock";
+                  example = "/srv/tshock";
                   description = lib.mdDoc
-                    "Path to variable state data directory for terraria.";
+                    "Path to variable state data directory for tshock.";
                 };
               };
             };
@@ -189,7 +189,7 @@
                 group = "tshock";
                 home = cfg.dataDir;
                 createHome = true;
-                uid = config.ids.uids.terraria;
+                uid = config.ids.uids.tshock;
               };
 
               users.groups.tshock = { gid = config.ids.gids.tshock; };
