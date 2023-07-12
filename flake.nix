@@ -63,7 +63,7 @@
               (valFlag "maxPlayers" cfg.maxPlayers)
               (valFlag "password" cfg.password)
               (valFlag "motd" cfg.messageOfTheDay)
-              (valFlag "world" cfg.worldPath)
+              (valFlag "world" "${cfg.worldsPath}/${cfg.worldName}")
               (valFlag "autocreate"
                 (builtins.getAttr cfg.autoCreatedWorldSize worldSizeMap))
               (valFlag "banlist" cfg.banListPath)
@@ -81,6 +81,12 @@
                 getBin pkgs.tmux
               }/bin/tmux -S ${cfg.dataDir}/tshock.sock send-keys Enter exit Enter
               ${getBin pkgs.coreutils}/bin/tail --pid="$1" -f /dev/null
+            '';
+            startScript = pkgs.writeScript "tshock-start" ''
+              #!${pkgs.runtimeShell}
+
+              umask 0002
+              ${getBin pkgs.tmux}/bin/tmux -S /var/lib/tshock/tshock.sock new -d ${pkgs.tshock}/bin/TShock.Server ${lib.concatStringsSep " " flags} -configpath /var/lib/tshock -worldpath /var/lib/tshock
             '';
           in {
             options = {
@@ -126,14 +132,19 @@
                   '';
                 };
 
-                worldPath = mkOption {
-                  type = types.nullOr types.path;
+                worldName = mkOption {
+                  type = types.nullOr types.str;
                   default = null;
                   description = lib.mdDoc ''
                     The path to the world file (`.wld`) which should be loaded.
                     If no world exists at this path, one will be created with the size
                     specified by `autoCreatedWorldSize`.
                   '';
+                };
+
+                worldsPath = mkOption {
+                  type = types.nullOr types.path;
+                  default = /var/lib/tshock/Worlds;
                 };
 
                 autoCreatedWorldSize = mkOption {
@@ -193,8 +204,8 @@
                 #uid = config.ids.uids.terraria;
               };
 
-              users.groups.tshock = { /*gid = config.ids.gids.tshock;*/ };
-              users.groups.tshock.members = [ "tshock" ];
+              users.groups.tshock = { # gid = config.ids.gids.tshock;
+              };
 
               systemd.services.tshock = {
                 description = "TShock Server Service";
@@ -202,22 +213,18 @@
                 after = [ "network.target" ];
 
                 serviceConfig = {
+                  WorkingDirectory = "~";
                   User = "tshock";
                   Type = "forking";
                   GuessMainPID = true;
-                  ExecStart = "${
-                      getBin pkgs.tmux
-                    }/bin/tmux -S /var/lib/tshock/tshock.sock new -d ${pkgs.tshock}/bin/TShock.Server ${
-                      lib.concatStringsSep " " flags
-                    }";
+                  ExecStart = "${startScript}";
                   ExecStop = "${stopScript} $MAINPID";
                   StateDirectory = "tshock";
                 };
 
                 postStart = ''
-                  ${pkgs.coreutils}/bin/chmod 660 /var/lib/tshock/tshock.sock
-                  ${pkgs.coreutils}/bin/chgrp tshock /var/lib/tshock/tshock.sock
-                '';
+                     ${pkgs.coreutils}/bin/chmod 660 /var/lib/tshock/tshock.sock
+                   '';
               };
 
               networking.firewall = mkIf cfg.openFirewall {
